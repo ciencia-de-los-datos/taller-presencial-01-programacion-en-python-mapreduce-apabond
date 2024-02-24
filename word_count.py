@@ -13,8 +13,20 @@
 #     ('text2.txt'. 'hypotheses.')
 #   ]
 #
+import glob
+import fileinput
+
+
 def load_input(input_directory):
-    pass
+
+    sequence = []
+    filenames = glob.glob(input_directory + "/*")
+    with fileinput.input(files=(filenames)) as f: #el fileinput es el responsable de iterar entre archivos
+        for line in f:
+            sequence.append((fileinput.filename(), line)) #agrega nombre del archivo y linea correspondiente
+    return sequence
+
+
 
 
 #
@@ -30,7 +42,16 @@ def load_input(input_directory):
 #   ]
 #
 def mapper(sequence):
-    pass
+    new_sequence = []
+    for _, text in sequence: #se descarta el nombre de archivo con el _ que muestra el ultimo resultado
+        words = text.split() #divide la frase en palabras
+        for word in words:
+            word=word.lower()
+            word=word.replace(",", "")
+            word=word.replace(".", "")
+            new_sequence.append((word, 1)) 
+    return new_sequence
+
 
 
 #
@@ -45,7 +66,9 @@ def mapper(sequence):
 #   ]
 #
 def shuffle_and_sort(sequence):
-    pass
+    sorted_sequence = sorted(sequence, key=lambda x: x[0]) #lambda es la palabra clave para crear funciones anonimas, esta permite ordenar por la primera posicion de cada tupla
+    return sorted_sequence
+
 
 
 #
@@ -55,15 +78,46 @@ def shuffle_and_sort(sequence):
 # texto.
 #
 def reducer(sequence):
-    pass
+    diccionario= {}
+    
+    # for key,value in sequence:
+    #     if key not in diccionario.keys():  
+    #         diccionario[key] = []
+    #     diccionario[key].append(value) #agrega los valores si la palabra se repite
+
+    # new_sequence = []
+    # for key,value in diccionario.items():
+    #     tupla = (key, sum(value))
+    #     new_sequence.append(tupla)
+
+
+    for key,value in sequence:
+        if key not in diccionario.keys():  
+            diccionario[key] = 0
+        diccionario[key] += value #agrega los valores si la palabra se repite
+
+    new_sequence = []
+    for key,value in diccionario.items():
+        tupla = (key, value)
+        new_sequence.append(tupla)
+
+    return new_sequence
+
+
 
 
 #
 # Escriba la función create_ouptput_directory que recibe un nombre de directorio
 # y lo crea. Si el directorio existe, la función falla.
 #
-def create_ouptput_directory(output_directory):
-    pass
+import os.path
+
+def create_output_directory(output_directory):
+
+    if os.path.exists(output_directory):
+        raise FileExistsError(f"The directory '{output_directory}' already exists.")
+    os.makedirs(output_directory)
+
 
 
 #
@@ -75,7 +129,9 @@ def create_ouptput_directory(output_directory):
 # separados por un tabulador.
 #
 def save_output(output_directory, sequence):
-    pass
+    with open(output_directory + "/part-00000", "w") as file:
+        for key, value in sequence:
+            file.write(f"{key}\t{value}\n")
 
 
 #
@@ -83,18 +139,27 @@ def save_output(output_directory, sequence):
 # entregado como parámetro.
 #
 def create_marker(output_directory):
-    pass
+    with open(output_directory + "/_SUCCESS", "w") as file:
+        file.write("")
+
 
 
 #
 # Escriba la función job, la cual orquesta las funciones anteriores.
 #
 def job(input_directory, output_directory):
-    pass
+    sequence = load_input(input_directory)
+    sequence = mapper(sequence)
+    sequence = shuffle_and_sort(sequence)
+    sequence = reducer(sequence)
+    create_output_directory(output_directory)
+    save_output(output_directory, sequence)
+    create_marker(output_directory)
+    
 
 
 if __name__ == "__main__":
-    job(
-        "input",
-        "output",
-    )
+     job(
+         "input",
+         "output",
+     )
